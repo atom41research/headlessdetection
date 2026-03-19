@@ -9,8 +9,10 @@ wheels/
 # Virtual environments
 .venv
 
-# Data (databases, generated output — but keep data/top1000trancourls.txt)
-data/*.db
+# Databases and generated data (keep data/top1000trancourls.txt)
+**/*.db
+**/*.db-shm
+**/*.db-wal
 data/*.json
 data/certs/
 
