@@ -1,0 +1,24 @@
+services:
+  detector:
+    build:
+      context: ..
+      dockerfile: headless_detector/Dockerfile
+    container_name: headless-detector
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - seccomp=unconfined
+    ports:
+      - "8099:8099"
+    volumes:
+      - detector-data:/app/headless_detector/data
+    deploy:
+      resources:
+        limits:
+          cpus: "4"
+          memory: 4G
+    # Default: run the server. Override with: docker compose run detector test --runs 5
+    command: ["server"]
+
+volumes:
+  detector-data:

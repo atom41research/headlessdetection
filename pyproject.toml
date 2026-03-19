@@ -1,0 +1,24 @@
+[project]
+name = "headlessdetection"
+version = "0.1.0"
+description = "Empirical framework for detecting Chrome headless mode via behavioral and structural signals"
+readme = "README.md"
+license = "AGPL-3.0-or-later"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.129.0",
+    "httpx>=0.28.1",
+    "numpy>=2.4.2",
+    "pillow>=12.1.1",
+    "playwright>=1.58.0",
+    "rich>=14.3.2",
+    "scipy>=1.17.0",
+    "uvicorn>=0.41.0",
+    "psutil>=6.0.0",
+    "cryptography>=44.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "docker>=7.0.0",
+]

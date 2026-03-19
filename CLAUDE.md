@@ -1,0 +1,9 @@
+- All tests must use Chrome (not Chromium)
+- All headless runs must use a user-agent string matching headful Chrome (do not reveal headless mode)
+- Always launch Chrome with `--disable-blink-features=AutomationControlled` to prevent automation markers
+- Always use system Chrome (`channel="chrome"`), never Playwright's bundled Chromium
+- Import shared constants from `core.config`, browser helpers from `core.browser`
+- Use `core.storage` for all database operations (never create per-module storage)
+- Detector server: `uv run uvicorn detector.server:app --port 8099`
+- Probe server: `uv run python scripts/run_server.py`
+- Run experiments: `uv run python -m experiments --list`

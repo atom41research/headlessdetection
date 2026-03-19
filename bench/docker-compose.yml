@@ -1,0 +1,51 @@
+services:
+  headless:
+    build:
+      context: ..
+      dockerfile: bench/Dockerfile.headless
+    shm_size: 8g
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - seccomp=unconfined
+    deploy:
+      resources:
+        limits:
+          cpus: "4"
+          memory: 8G
+    volumes:
+      - ./results:/app/bench/results
+
+  headful:
+    build:
+      context: ..
+      dockerfile: bench/Dockerfile.headful
+    shm_size: 8g
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - seccomp=unconfined
+    deploy:
+      resources:
+        limits:
+          cpus: "4"
+          memory: 8G
+    volumes:
+      - ./results:/app/bench/results
+
+  headless-shell:
+    build:
+      context: ..
+      dockerfile: bench/Dockerfile.headless-shell
+    shm_size: 8g
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - seccomp=unconfined
+    deploy:
+      resources:
+        limits:
+          cpus: "4"
+          memory: 8G
+    volumes:
+      - ./results:/app/bench/results

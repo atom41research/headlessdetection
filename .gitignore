@@ -1,0 +1,19 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Data (databases, generated output — but keep data/top1000trancourls.txt)
+data/*.db
+data/*.json
+data/certs/
+
+# Generated output from rendering comparison and benchmarks
+rendering_comparison/output*/
+bench/results/
