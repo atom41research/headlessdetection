@@ -10,6 +10,8 @@ Empirical framework for detecting Chrome headless mode -- which signals work, wh
 
 Chrome's `--headless=new` mode shares the same binary and rendering pipeline as headful Chrome. Most detection strategies people assume would work simply do not. The table below separates the signals that survived testing from the ones that didn't.
 
+Results were measured on **Chrome 144** (v144.0.7559.109) on Linux. Detection signals can shift between Chrome releases as the rendering pipeline evolves — run the experiments on your version to get current numbers.
+
 | Signal | Headful | Headless | Reliability | Spoofability |
 |---|---|---|---|---|
 | **Scrollbar width** | 15 px | 0 px | 100 % | Moderate |
@@ -25,6 +27,8 @@ Chrome's `--headless=new` mode shares the same binary and rendering pipeline as 
 | Resource request ordering | identical | identical | -- | -- |
 
 The "identical" rows are not padding. They document negative results -- hypotheses we tested and rejected. Every row cost investigation time, and knowing what does not work is as valuable as knowing what does.
+
+Chrome updates its headless implementation across releases. To test whether these signals hold on your version, run `uv run python -m experiments --quick` — results include the detected Chrome version automatically.
 
 ### Detection code
 
@@ -113,6 +117,7 @@ The detector (`detector/`) is the operational version -- a single server that ru
 ## Requirements
 
 - Python 3.12+
+- [uv](https://docs.astral.sh/uv/) package manager
 - System Chrome (not Chromium)
 - Playwright (`uv run playwright install chrome`)
 

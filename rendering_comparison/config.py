@@ -4,9 +4,7 @@ import argparse
 from pathlib import Path
 
 # Paths
-DEFAULT_INPUT = Path(
-    "/home/n8e/CursorProjects/bd/headless_vs_full/research/findings/top_diffs_rendering.md"
-)
+DEFAULT_INPUT = Path("urls.txt")
 DEFAULT_OUTPUT_DIR = Path("rendering_comparison/output")
 
 # Browser settings
