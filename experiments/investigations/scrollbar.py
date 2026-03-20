@@ -14,8 +14,9 @@ from playwright.async_api import async_playwright
 from rich.console import Console
 from rich.table import Table
 
-from core.config import BASE_URL as BASE, DEFAULT_VIEWPORT as VIEWPORT, BROWSER_ARGS, CHANNEL, CHROME_USER_AGENT as USER_AGENT
-from core.browser import create_session, get_results, get_resources, close_all
+from core import config
+from core.config import BASE_URL as BASE, DEFAULT_VIEWPORT as VIEWPORT, BROWSER_ARGS, CHANNEL
+from core.browser import create_session, get_results, get_resources, close_all, detect_chrome_ua
 
 console = Console()
 
@@ -27,8 +28,8 @@ async def launch(pw, headless, viewport=None):
     ctx_args = {}
     if viewport:
         ctx_args["viewport"] = viewport
-    if headless:
-        ctx_args["user_agent"] = USER_AGENT
+    if headless and config.CHROME_USER_AGENT:
+        ctx_args["user_agent"] = config.CHROME_USER_AGENT
     context = await browser.new_context(**ctx_args)
     page = await context.new_page()
     return browser, context, page
@@ -274,14 +275,16 @@ async def main():
     console.print(f"[dim]Using channel='{CHANNEL}' (system Chrome)[/dim]\n")
 
     async with async_playwright() as pw:
-        # Verify Chrome is available
+        # Verify Chrome is available and detect real UA
         try:
             browser = await pw.chromium.launch(
                 headless=True, channel=CHANNEL, args=["--no-sandbox"]
             )
             version = browser.version
             await browser.close()
-            console.print(f"[green]Chrome version: {version}[/green]\n")
+            console.print(f"[green]Chrome version: {version}[/green]")
+            await detect_chrome_ua(pw)
+            console.print(f"[green]Detected UA: {config.CHROME_USER_AGENT[:60]}...[/green]\n")
         except Exception as e:
             console.print(f"[red]Chrome not available: {e}[/red]")
             console.print("Install Chrome or use: npx playwright install chrome")
@@ -297,7 +300,7 @@ async def main():
             except httpx.ConnectError:
                 console.print(
                     "[red]Server not running. Start with:[/red]\n"
-                    "  uv run uvicorn app.main:app\n"
+                    "  uv run python scripts/run_server.py\n"
                 )
                 return
 

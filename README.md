@@ -73,20 +73,26 @@ cd headlessdetection
 uv sync
 uv run playwright install chrome
 
+# Also install headless-shell if you plan to run --shell or --all experiments
+uv run playwright install chromium-headless-shell
+
 # Run the detection server (visit http://localhost:8099 in Chrome)
 uv run uvicorn detector.server:app --port 8099
 
-# Start the probe server (needed for experiments, runs on port 8000)
+# Start the probe server (needed for experiments, HTTP:8000 + HTTPS:8443)
 uv run python scripts/run_server.py &
 
-# Run quick experiments (~5 min, reliable signals)
+# Run quick experiments (~13 min, reliable signals)
 uv run python -m experiments --quick
 
-# Run all experiments (~60 min, all signals)
+# Run all experiments (~107 min, all signals)
 uv run python -m experiments --all
 
 # List available experiments
 uv run python -m experiments --list
+
+# Test the detector against all browser modes
+uv run python -m detector.cli
 ```
 
 ---
@@ -96,9 +102,10 @@ uv run python -m experiments --list
 ```
 core/                  Shared config, browser helpers, storage, analysis, TLS
 detector/              Standalone detection server with weighted scoring
+  detector/cli.py      Test the detector against all browser modes (headful/headless/shell)
 probes/                Research probe server -- 17 detection test pages
 experiments/           Investigation scripts and experiment runner
-rendering_comparison/  Side-by-side headful vs headless rendering
+rendering_comparison/  Side-by-side headful vs headless rendering (requires --urls-file)
 docs/                  Results data and GitHub Pages site
 data/                  Raw experimental data
 scripts/               Utility scripts (server runner, data processing)

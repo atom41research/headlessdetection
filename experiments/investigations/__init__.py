@@ -102,6 +102,6 @@ REGISTRY = {
 }
 
 # Presets
-QUICK = ["scrollbar", "chrome"]  # ~5 min, most reliable signals
+QUICK = ["scrollbar", "chrome"]  # ~13 min, most reliable signals
 SHELL = ["browsers", "lazy", "threshold", "check_ect"]  # headless-shell specific
 ALL = list(REGISTRY.keys())

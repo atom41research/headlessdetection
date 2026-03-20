@@ -16,8 +16,9 @@ from playwright.async_api import async_playwright
 from rich.console import Console
 from rich.table import Table
 
-from core.config import BASE_URL as BASE, DEFAULT_VIEWPORT as VIEWPORT, BROWSER_ARGS, CHANNEL, CHROME_USER_AGENT as USER_AGENT
-from core.browser import close_all
+from core import config
+from core.config import BASE_URL as BASE, DEFAULT_VIEWPORT as VIEWPORT, BROWSER_ARGS, CHANNEL
+from core.browser import close_all, detect_chrome_ua
 
 console = Console()
 
@@ -65,8 +66,8 @@ async def launch(pw, headless: bool):
         headless=headless, channel=CHANNEL, args=BROWSER_ARGS
     )
     ctx_args = {"viewport": VIEWPORT}
-    if headless:
-        ctx_args["user_agent"] = USER_AGENT
+    if headless and config.CHROME_USER_AGENT:
+        ctx_args["user_agent"] = config.CHROME_USER_AGENT
     context = await browser.new_context(**ctx_args)
     page = await context.new_page()
     return browser, context, page
@@ -226,6 +227,7 @@ async def main():
         await client.post(f"{BASE}/clear")
 
     async with async_playwright() as pw:
+        await detect_chrome_ua(pw)
         async with httpx.AsyncClient() as client:
             await experiment_default(pw, client)
             await experiment_multi_run(pw, client, runs=5)

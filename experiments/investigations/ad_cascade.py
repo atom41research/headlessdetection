@@ -30,8 +30,9 @@ from playwright.async_api import async_playwright
 from rich.console import Console
 from rich.table import Table
 
-from core.config import BASE_URL as BASE, DEFAULT_VIEWPORT as VIEWPORT, BROWSER_ARGS, CHANNEL, CHROME_USER_AGENT as USER_AGENT
-from core.browser import close_all
+from core import config
+from core.config import BASE_URL as BASE, DEFAULT_VIEWPORT as VIEWPORT, BROWSER_ARGS, CHANNEL
+from core.browser import close_all, detect_chrome_ua
 
 console = Console()
 
@@ -170,7 +171,7 @@ async def launch(pw, headless: bool, *, extra_init_scripts: list[str] | None = N
     )
     ctx_args: dict = {"viewport": VIEWPORT}
     if headless:
-        ctx_args["user_agent"] = USER_AGENT
+        ctx_args["user_agent"] = config.CHROME_USER_AGENT
     context = await browser.new_context(**ctx_args)
     page = await context.new_page()
     await page.add_init_script(WEBDRIVER_PATCH)
@@ -201,7 +202,7 @@ async def visit_with_har(
             "record_har_path": str(har_path),
         }
         if headless:
-            ctx_args["user_agent"] = USER_AGENT
+            ctx_args["user_agent"] = config.CHROME_USER_AGENT
         context = await browser.new_context(**ctx_args)
 
         if cookies:
@@ -490,8 +491,12 @@ async def main(args: argparse.Namespace):
     console.print("\n[bold]Ad-Tech Cascade Investigation[/bold]")
     console.print(f"  Chrome channel: {CHANNEL}")
     console.print(f"  Viewport: {VIEWPORT['width']}x{VIEWPORT['height']}")
-    console.print(f"  UA spoofed for headless: yes")
     console.print(f"  Target: {TARGET_URL}\n")
+
+    # Detect real headful UA for spoofing
+    async with async_playwright() as pw_init:
+        await detect_chrome_ua(pw_init)
+    console.print(f"  UA spoofed for headless: yes ({config.CHROME_USER_AGENT[:50]}...)\n")
 
     experiments = (
         list(EXPERIMENTS.values())
