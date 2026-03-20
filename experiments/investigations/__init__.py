@@ -7,6 +7,7 @@ REGISTRY = {
         "estimated_minutes": 3,
         "modes": ["headful", "headless"],
         "reliable": True,
+        "needs_server": True,
     },
     "chrome": {
         "module": "experiments.investigations.chrome",
@@ -14,6 +15,7 @@ REGISTRY = {
         "estimated_minutes": 10,
         "modes": ["headful", "headless"],
         "reliable": True,
+        "needs_server": True,
     },
     "chrome_deep": {
         "module": "experiments.investigations.chrome_deep",
@@ -21,6 +23,7 @@ REGISTRY = {
         "estimated_minutes": 8,
         "modes": ["headful", "headless"],
         "reliable": False,
+        "needs_server": True,
     },
     "lazy": {
         "module": "experiments.investigations.lazy",
@@ -28,6 +31,7 @@ REGISTRY = {
         "estimated_minutes": 5,
         "modes": ["headful", "headless"],
         "reliable": False,
+        "needs_server": True,
     },
     "threshold": {
         "module": "experiments.investigations.threshold",
@@ -35,6 +39,7 @@ REGISTRY = {
         "estimated_minutes": 8,
         "modes": ["headful", "headless"],
         "reliable": False,
+        "needs_server": True,
     },
     "browsers": {
         "module": "experiments.investigations.browsers",
@@ -42,6 +47,7 @@ REGISTRY = {
         "estimated_minutes": 5,
         "modes": ["headful", "headless"],
         "reliable": False,
+        "needs_server": True,
     },
     "rendering": {
         "module": "experiments.investigations.rendering",
@@ -49,6 +55,7 @@ REGISTRY = {
         "estimated_minutes": 10,
         "modes": ["headful", "headless"],
         "reliable": False,
+        "needs_server": True,
     },
     "render_ratio": {
         "module": "experiments.investigations.render_ratio",
@@ -56,6 +63,7 @@ REGISTRY = {
         "estimated_minutes": 8,
         "modes": ["headful", "headless"],
         "reliable": False,
+        "needs_server": True,
     },
     "stress_optimal": {
         "module": "experiments.investigations.stress_optimal",
@@ -63,6 +71,7 @@ REGISTRY = {
         "estimated_minutes": 10,
         "modes": ["headful", "headless"],
         "reliable": False,
+        "needs_server": True,
     },
     "compositor": {
         "module": "experiments.investigations.compositor",
@@ -70,6 +79,7 @@ REGISTRY = {
         "estimated_minutes": 8,
         "modes": ["headful", "headless"],
         "reliable": False,
+        "needs_server": True,
     },
     "combined_classifier": {
         "module": "experiments.investigations.combined_classifier",
@@ -77,6 +87,7 @@ REGISTRY = {
         "estimated_minutes": 15,
         "modes": ["headful", "headless"],
         "reliable": False,
+        "needs_server": True,
     },
     "image_loading": {
         "module": "experiments.investigations.image_loading",
@@ -84,6 +95,7 @@ REGISTRY = {
         "estimated_minutes": 5,
         "modes": ["headful", "headless"],
         "reliable": False,
+        "needs_server": True,
     },
     "ad_cascade": {
         "module": "experiments.investigations.ad_cascade",
@@ -91,6 +103,7 @@ REGISTRY = {
         "estimated_minutes": 10,
         "modes": ["headful", "headless"],
         "reliable": False,
+        "needs_server": True,
     },
     "check_ect": {
         "module": "experiments.investigations.check_ect",
@@ -98,6 +111,7 @@ REGISTRY = {
         "estimated_minutes": 2,
         "modes": ["headful", "headless"],
         "reliable": False,
+        "needs_server": False,
     },
 }
 

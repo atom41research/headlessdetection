@@ -63,10 +63,12 @@ def print_list():
     table.add_column("Description")
     table.add_column("Est. Time", justify="right")
     table.add_column("Modes", justify="center")
+    table.add_column("Server", justify="center")
     table.add_column("Reliable", justify="center")
 
     for i, (name, meta) in enumerate(REGISTRY.items(), 1):
         reliable = "[bold green]YES[/bold green]" if meta["reliable"] else "[dim]no[/dim]"
+        server = "[yellow]yes[/yellow]" if meta.get("needs_server", True) else "[dim]no[/dim]"
         modes = ", ".join(meta["modes"])
         table.add_row(
             str(i),
@@ -74,6 +76,7 @@ def print_list():
             meta["description"],
             f"{meta['estimated_minutes']} min",
             modes,
+            server,
             reliable,
         )
 

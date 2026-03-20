@@ -6,10 +6,10 @@ A detection server that differentiates Chrome's **new headless** mode from headf
 
 ```bash
 # Start the server
-uv run uvicorn headless_detector.server:app --port 8099
+uv run uvicorn detector.server:app --port 8099
 
 # Run the test suite (headful + headless, direct + iframe)
-uv run python -m headless_detector.test_detector --runs 3
+uv run python -m detector.cli --runs 3
 ```
 
 Visit `http://localhost:8099` in a browser to see the probes run interactively.
@@ -18,7 +18,7 @@ Visit `http://localhost:8099/iframe` for the same probes inside an 800x600 ifram
 ## Docker
 
 ```bash
-cd headless_detector
+cd detector
 
 # Run the server (accessible at http://localhost:8099)
 docker compose up
@@ -86,7 +86,7 @@ Positive score = headless signal, negative = headful. Total > 0 means headless.
 | File | Purpose |
 |---|---|
 | `server.py` | FastAPI server with probe scoring logic and detection HTML |
-| `test_detector.py` | Playwright test harness (both modes, direct + iframe pages) |
+| `cli.py` | Playwright test harness (both modes, direct + iframe pages) |
 | `Dockerfile` | Container with Chrome, Xvfb, and all dependencies |
 | `docker-compose.yml` | Run server or tests with one command |
 | `entrypoint.sh` | Starts Xvfb, then runs server or test mode |

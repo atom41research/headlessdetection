@@ -1,7 +1,7 @@
 import uuid
 
 from fastapi import FastAPI, Query
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 
 from core import storage
 from .tracking import router as tracking_router
@@ -31,6 +31,32 @@ app.add_middleware(HeaderCaptureMiddleware)
 @app.on_event("startup")
 def startup():
     storage.init_db()
+
+
+# --- Index page ---
+
+PROBE_PAGES = [
+    "scrollbar-width", "outer-inner", "rendering-stress", "stress-compositor",
+    "lazy-loading", "lazy-loading-fine", "media-queries", "font-loading",
+    "import-chains", "background-chains", "http-probes", "image-loading",
+    "ad-cascade", "advanced-probes", "deep-server-probes", "combined",
+    "server-signals",
+]
+
+
+@app.get("/", response_class=HTMLResponse)
+async def index():
+    links = "\n".join(
+        f'<li><a href="/pages/{p}?s=demo">{p}</a></li>' for p in PROBE_PAGES
+    )
+    return f"""<!DOCTYPE html>
+<html><head><title>Headless Detection Probe Server</title>
+<style>body{{font-family:system-ui;max-width:640px;margin:2rem auto;padding:0 1rem}}
+a{{color:#0066cc}}</style></head>
+<body><h1>Probe Server</h1>
+<p>Available probe pages:</p><ul>{links}</ul>
+<p><a href="/docs">API docs (Swagger UI)</a></p>
+</body></html>"""
 
 
 # --- Session management ---
