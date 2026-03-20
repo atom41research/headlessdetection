@@ -29,9 +29,10 @@ RUN uv sync --frozen
 
 RUN uv run playwright install --with-deps chrome
 
-COPY headless_detector/ ./headless_detector/
+COPY core/ ./core/
+COPY detector/ ./detector/
 
-COPY headless_detector/entrypoint.sh /entrypoint.sh
+COPY detector/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 EXPOSE 8099

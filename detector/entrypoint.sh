@@ -18,11 +18,11 @@ MODE="${1:-server}"
 case "$MODE" in
     server)
         # Just run the detection server
-        exec uv run uvicorn headless_detector.server:app --host 0.0.0.0 --port 8099
+        exec uv run uvicorn detector.server:app --host 0.0.0.0 --port 8099
         ;;
     test)
         # Start server in background, run tests, exit
-        uv run uvicorn headless_detector.server:app --host 0.0.0.0 --port 8099 &
+        uv run uvicorn detector.server:app --host 0.0.0.0 --port 8099 &
         SERVER_PID=$!
 
         # Wait for server
@@ -34,7 +34,7 @@ case "$MODE" in
         done
 
         shift
-        uv run python -m headless_detector.test_detector "$@"
+        uv run python -m detector.cli "$@"
         EXIT_CODE=$?
 
         kill $SERVER_PID 2>/dev/null || true

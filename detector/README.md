@@ -2,6 +2,13 @@
 
 A detection server that differentiates Chrome's **new headless** mode from headful, even when the client uses stealth flags (`--disable-blink-features=AutomationControlled`, spoofed UA, system Chrome).
 
+## Prerequisites
+
+```bash
+uv sync
+uv run playwright install chrome
+```
+
 ## Quick start (local)
 
 ```bash
@@ -57,23 +64,25 @@ The server serves an HTML page with client-side JavaScript probes. The browser r
 | 5 | **WebGL Timer Extension** | present | missing | 1 | No (missing for both in Docker) |
 | 6 | **WebGL Extension Count** | GL1=36, GL2=30 | GL1=35, GL2=29 | info | No |
 | 7 | **Screen Position** | (0, 0) | (10, 10) | 1 | No (both 10,10 in Docker) |
+| 8 | **sec-ch-ua Brand** | Chrome | HeadlessChrome (shell only) | 3 | Yes (server-side) |
+| 9 | **Accept-Language** | present | absent (shell only) | 1 | Yes (server-side) |
 
-Window Chrome and Scrollbar Width are the two anchors that work **everywhere** - bare metal, VM, Docker, any resolution, any page, inside iframes.
+Probes 1-7 run client-side in JavaScript. Probes 8-9 run server-side via HTTP header inspection. Window Chrome and Scrollbar Width are the two anchors that work **everywhere** -- bare metal, VM, Docker, any resolution, any page, inside iframes.
 
 ### Scoring
 
 Positive score = headless signal, negative = headful. Total > 0 means headless.
 
-| Environment | Headful score | Headless score |
-|---|---|---|
-| Bare metal | **-13** | **+13** |
-| Docker | **-5** | **+13** |
+| Environment | Headful | Headless (new) | Headless-shell |
+|---|---|---|---|
+| Bare metal | **-17** | **+9** | **+15** |
+| Docker | **-13** | **+9** | **+15** |
 
 ### What doesn't work (stealth flags active)
 
 | Signal | Why it fails |
 |---|---|
-| `navigator.webdriver` | Masked by `--disable-blink-features=AutomationControlled` |
+| `navigator.webdriver` | `true` in both modes (identical, not a differentiator) |
 | WebGL renderer (SwiftShader) | Both modes use SwiftShader on hosts without a discrete GPU |
 | Permission shadows | Both return `query=prompt, notification=default` |
 | `navigator.plugins` | Both report 5 plugins with identical names |

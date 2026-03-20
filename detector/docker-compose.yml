@@ -2,7 +2,7 @@ services:
   detector:
     build:
       context: ..
-      dockerfile: headless_detector/Dockerfile
+      dockerfile: detector/Dockerfile
     container_name: headless-detector
     cap_add:
       - SYS_ADMIN
@@ -11,7 +11,7 @@ services:
     ports:
       - "8099:8099"
     volumes:
-      - detector-data:/app/headless_detector/data
+      - detector-data:/app/detector/data
     deploy:
       resources:
         limits:

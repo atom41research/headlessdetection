@@ -75,7 +75,7 @@ If any of the three techniques returns a value greater than 0, the browser is re
 
 ## Server-side integration
 
-The client-side JS measures the scrollbar width and fires a labelled beacon back to the server (`/track/sb-js-detected` or `/track/sb-js-not-detected`). The exact pixel value is also reported (e.g., `/track/sb-js-innerWidth-15` vs `/track/sb-js-innerWidth-0`). See `app/pages/scrollbar_width.py` for the implementation.
+The client-side JS measures the scrollbar width and fires a labelled beacon back to the server (`/track/sb-js-detected` or `/track/sb-js-not-detected`). The exact pixel value is also reported (e.g., `/track/sb-js-innerWidth-15` vs `/track/sb-js-innerWidth-0`). See `probes/pages/scrollbar_width.py` for the implementation.
 
 ## Spoofability
 

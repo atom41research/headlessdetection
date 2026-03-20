@@ -18,7 +18,7 @@ Results were measured on **Chrome 144** (v144.0.7559.109) on Linux. Detection si
 | **Window chrome** (outer - inner) | 8 / 85 px | 0 / 0 px | 100 % | Moderate |
 | **Rendering stress timing** | ~97 ms | ~87 ms | p = 0.001, d = 1.35 | Low |
 | **Differential timing** | similar H/L | heavy > light | p = 0.003, d = -1.32 | Low |
-| sec-ch-ua header | Chrome/... | HeadlessChrome/... | 100 % | Trivial |
+| user-agent header | Chrome/... | HeadlessChrome/... | 100 % | Trivial |
 | Lazy loading thresholds | identical | identical | -- | -- |
 | CSS media queries (22 probes) | identical | identical | -- | -- |
 | Font loading behavior | identical | identical | -- | -- |
@@ -87,6 +87,9 @@ uv run python -m experiments --quick
 
 # Run all experiments (~107 min, all signals)
 uv run python -m experiments --all
+
+# Run headless-shell specific experiments
+uv run python -m experiments --shell
 
 # List available experiments
 uv run python -m experiments --list

@@ -15,9 +15,11 @@ import inspect
 import sys
 import time
 
+import httpx
 from rich.console import Console
 from rich.table import Table
 
+from core.config import BASE_URL
 from experiments.investigations import ALL, QUICK, REGISTRY, SHELL
 
 console = Console()
@@ -88,6 +90,8 @@ def print_list():
     console.print(f"  --quick : {', '.join(QUICK)}")
     console.print(f"  --shell : {', '.join(SHELL)}")
     console.print(f"  --all   : all {len(ALL)} investigations")
+    console.print(f"\n[dim]Server = yes means you must start the probe server first:[/dim]")
+    console.print(f"[dim]  uv run python scripts/run_server.py &[/dim]")
     console.print()
 
 
@@ -160,6 +164,19 @@ def main():
     console.rule("[bold]Headless Detection Investigation Runner")
     console.print(f"\nWill run [bold]{len(names)}[/bold] investigation(s): {', '.join(names)}")
     console.print(f"Estimated total time: [bold]{total_minutes} min[/bold]\n")
+
+    # Pre-check: if any investigation needs the probe server, verify it's reachable
+    needs_server = any(REGISTRY[n].get("needs_server", True) for n in names)
+    if needs_server:
+        try:
+            httpx.get(f"{BASE_URL}/", timeout=3)
+        except httpx.ConnectError:
+            console.print(
+                "[bold red]Probe server is not running.[/bold red]\n"
+                "Start it first:\n"
+                "  uv run python scripts/run_server.py &\n"
+            )
+            sys.exit(1)
 
     results = {}
     wall_start = time.monotonic()

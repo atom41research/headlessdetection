@@ -53,7 +53,7 @@ Windows ~16/39). An incorrect delta is itself a detection signal.
 
 **Server-side**: Requires minimal client-side JS to relay the measurement.
 Cannot be detected via CSS media queries or HTTP headers.
-`app/pages/outer_inner.py` implements full server-side gating: a sync XHR
+`probes/pages/outer_inner.py` implements full server-side gating: a sync XHR
 beacon sends the delta, then the server decides per-request whether to
 serve or block resources. Tested: headful gets 3/3 served, headless 0/3.
 
@@ -76,7 +76,7 @@ n=10 runs per mode, 100% headful rate, 0% headless rate.
 **Server-side**: JS measures the delta and fires a labelled beacon
 (`/track/sb-js-detected` or `/track/sb-js-not-detected`). The exact pixel
 value is also reported (`/track/sb-js-innerWidth-15` vs `-0`). See
-`app/pages/scrollbar_width.py`.
+`probes/pages/scrollbar_width.py`.
 
 **Spoofability**: Moderate. Requires patching `document.documentElement.clientWidth`
 to return `innerWidth - N` with a plausible scrollbar width (15-17px on Linux,
