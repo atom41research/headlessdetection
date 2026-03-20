@@ -76,6 +76,9 @@ uv run playwright install chrome
 # Run the detection server (visit http://localhost:8099 in Chrome)
 uv run uvicorn detector.server:app --port 8099
 
+# Start the probe server (needed for experiments, runs on port 8000)
+uv run python scripts/run_server.py &
+
 # Run quick experiments (~5 min, reliable signals)
 uv run python -m experiments --quick
 
@@ -84,9 +87,6 @@ uv run python -m experiments --all
 
 # List available experiments
 uv run python -m experiments --list
-
-# Start the probe server (individual detection pages)
-uv run python scripts/run_server.py
 ```
 
 ---
@@ -96,7 +96,7 @@ uv run python scripts/run_server.py
 ```
 core/                  Shared config, browser helpers, storage, analysis, TLS
 detector/              Standalone detection server with weighted scoring
-probes/                Research probe server -- 18 detection test pages
+probes/                Research probe server -- 17 detection test pages
 experiments/           Investigation scripts and experiment runner
 rendering_comparison/  Side-by-side headful vs headless rendering
 docs/                  Results data and GitHub Pages site
@@ -120,6 +120,7 @@ The detector (`detector/`) is the operational version -- a single server that ru
 - [uv](https://docs.astral.sh/uv/) package manager
 - System Chrome (not Chromium)
 - Playwright (`uv run playwright install chrome`)
+- Display server (X11/Xvfb) for headful mode experiments
 
 ---
 
