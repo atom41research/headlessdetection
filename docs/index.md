@@ -27,7 +27,6 @@ Out of 20+ signals tested between Chrome headful and headless, only the first th
 
 - [Detection Methods](detection/) -- scrollbar width, window chrome gap, rendering stress, and why other signals fail
 - [Headless Shell](headless-shell/) -- how `chrome-headless-shell` differs from full Chrome headless
-- [Benchmarks](benchmarks/) -- 965-URL Docker benchmark comparing resource usage across modes
 - [Raw Data](data/) -- full result tables for Chrome, Chromium, and headless-shell runs
 
 ## Source

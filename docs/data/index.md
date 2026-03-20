@@ -7,7 +7,7 @@ has_children: true
 
 # Raw Data
 
-Full result tables from each benchmark run. These contain per-URL metrics including HTTP status codes, content hashes, timing data, and resource measurements.
+Full detection research results. These contain per-URL metrics including HTTP status codes, content hashes, timing data, and resource measurements.
 
 ## Result files
 

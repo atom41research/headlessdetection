@@ -16,6 +16,5 @@ wheels/
 data/*.json
 data/certs/
 
-# Generated output from rendering comparison and benchmarks
+# Generated output from rendering comparison
 rendering_comparison/output*/
-bench/results/

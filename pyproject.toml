@@ -17,8 +17,3 @@ dependencies = [
     "psutil>=6.0.0",
     "cryptography>=44.0.0",
 ]
-
-[dependency-groups]
-dev = [
-    "docker>=7.0.0",
-]

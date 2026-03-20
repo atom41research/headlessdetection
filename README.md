@@ -51,30 +51,12 @@ Both signals are spoofable by patching DOM property getters, but cross-validatio
 
 `chrome-headless-shell` is a stripped binary distributed by Chrome for Testing (what Playwright bundles as its default "chromium"). It is a fundamentally different target than Chrome's `--headless=new`.
 
-Key findings from the 965-URL benchmark:
+Key detection-relevant findings:
 
 - **Fake network metrics** (RTT = 0, downlink = 10 Mbps) cause a detectable lazy loading threshold shift: images load to 3700 px below the viewport vs 1950 px in headful. This is a 100%-reliable binary signal across all viewport sizes.
-- **26% less memory, 31% fewer processes** -- the shell strips the GPU process, compositor, and display surface code.
-- **36 exclusive HTTP/2 protocol errors** across 965 URLs (`ERR_HTTP2_PROTOCOL_ERROR` in shell only, zero in headful or headless Chrome).
-- **3.2x more HTTP 403 responses** (95 vs 30) -- servers detect the shell even with a spoofed User-Agent, likely via TLS ClientHello or HTTP/2 settings frame fingerprinting.
-- **6.3% content divergence** vs headful (compared to 0.9% between headless Chrome and headful Chrome).
+- **Significant resource and compatibility differences** -- the shell strips the GPU process, compositor, and display surface code, and exhibits higher rates of HTTP/2 errors and server-side blocking. Detailed performance analysis is available in the companion project [headlessperfbench](https://github.com/atom41research/headlessperfbench).
 
 The shell binary is easier to detect and harder to disguise. If your automation uses Playwright's default Chromium channel, you are running a different browser than your users.
-
----
-
-## Resource overhead
-
-Mean values per mode from the 965-URL benchmark (fresh browser instance per URL, Docker containers with 4 CPUs / 8 GB RAM):
-
-| Metric | Headless | Headful | Shell |
-|---|---|---|---|
-| Container active memory | 563 MB | 591 MB | 436 MB |
-| Chrome USS | 440 MB | 440 MB | 354 MB |
-| Process count | 10.5 | 10.5 | 7.2 |
-| vs Headful | -4.7 % | baseline | -26.2 % |
-
-Headless and headful Chrome are nearly identical in resource use because they run the same binary. The `--headless` flag suppresses the window but does not remove the rendering pipeline. The shell binary achieves its 26% memory reduction by eliminating the GPU process and compositor entirely.
 
 ---
 
@@ -112,7 +94,6 @@ core/                  Shared config, browser helpers, storage, analysis, TLS
 detector/              Standalone detection server with weighted scoring
 probes/                Research probe server -- 18 detection test pages
 experiments/           Investigation scripts and experiment runner
-bench/                 Docker-based benchmarking (965 real-world URLs)
 rendering_comparison/  Side-by-side headful vs headless rendering
 docs/                  Results data and GitHub Pages site
 data/                  Raw experimental data
@@ -134,7 +115,6 @@ The detector (`detector/`) is the operational version -- a single server that ru
 - Python 3.12+
 - System Chrome (not Chromium)
 - Playwright (`uv run playwright install chrome`)
-- Docker (for benchmarks only)
 
 ---
 
