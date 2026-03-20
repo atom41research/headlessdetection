@@ -106,4 +106,11 @@ def build_parser() -> argparse.ArgumentParser:
         default=0,
         help="Index of this run (set by orchestrator, default 0)",
     )
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=1,
+        help="Concurrent browser instances for fresh modes (default 1 = sequential). "
+             "Reuse modes always run sequentially.",
+    )
     return parser

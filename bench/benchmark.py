@@ -168,31 +168,67 @@ async def _run_fresh_modes(
 ) -> None:
     """Run fresh-browser modes: new Chrome per URL (single pass)."""
     run_idx = args.run_index
-    for url in urls:
-        for mode in modes:
-            desc = f"{url[:50]} | {mode} | run {run_idx}"
-            progress.update(task, description=desc)
+    workers = getattr(args, 'workers', 1)
 
-            try:
-                result = await asyncio.wait_for(
-                    run_benchmark(
-                        pw, url, mode, run_idx,
-                        args.sample_interval, args.settle_time,
-                        args.page_timeout, user_agent=real_ua,
-                    ),
-                    timeout=args.run_timeout,
-                )
-            except asyncio.TimeoutError:
-                result = BenchmarkRun(
-                    url=url, mode=mode, run_index=run_idx,
-                    error=f"Run timed out after {args.run_timeout}s",
-                )
-            all_runs.append(result)
+    if workers <= 1:
+        # Original sequential behavior
+        for url in urls:
+            for mode in modes:
+                desc = f"{url[:50]} | {mode} | run {run_idx}"
+                progress.update(task, description=desc)
 
-            if result.error:
-                console.print(f"  [yellow]Error: {result.error}[/yellow]")
+                try:
+                    result = await asyncio.wait_for(
+                        run_benchmark(
+                            pw, url, mode, run_idx,
+                            args.sample_interval, args.settle_time,
+                            args.page_timeout, user_agent=real_ua,
+                        ),
+                        timeout=args.run_timeout,
+                    )
+                except asyncio.TimeoutError:
+                    result = BenchmarkRun(
+                        url=url, mode=mode, run_index=run_idx,
+                        error=f"Run timed out after {args.run_timeout}s",
+                    )
+                all_runs.append(result)
 
-            progress.advance(task)
+                if result.error:
+                    console.print(f"  [yellow]Error: {result.error}[/yellow]")
+
+                progress.advance(task)
+    else:
+        # Concurrent: semaphore-limited workers
+        sem = asyncio.Semaphore(workers)
+
+        async def _bench_one(url, mode):
+            async with sem:
+                desc = f"{url[:50]} | {mode} | run {run_idx} (w={workers})"
+                progress.update(task, description=desc)
+                try:
+                    result = await asyncio.wait_for(
+                        run_benchmark(
+                            pw, url, mode, run_idx,
+                            args.sample_interval, args.settle_time,
+                            args.page_timeout, user_agent=real_ua,
+                        ),
+                        timeout=args.run_timeout,
+                    )
+                except asyncio.TimeoutError:
+                    result = BenchmarkRun(
+                        url=url, mode=mode, run_index=run_idx,
+                        error=f"Run timed out after {args.run_timeout}s",
+                    )
+                all_runs.append(result)
+                if result.error:
+                    console.print(f"  [yellow]Error: {result.error}[/yellow]")
+                progress.advance(task)
+
+        tasks = []
+        for url in urls:
+            for mode in modes:
+                tasks.append(_bench_one(url, mode))
+        await asyncio.gather(*tasks)
 
 
 async def _run_reuse_mode(
@@ -338,6 +374,7 @@ async def run_mode(args) -> None:
             "page_timeout_ms": args.page_timeout,
             "modes": all_modes,
             "urls": urls,
+            "workers": getattr(args, 'workers', 1),
         }
 
         def _save_mode(mode: str) -> None:

@@ -8,9 +8,13 @@ Usage:
     uv run python bench/run.py --no-build --urls-file bench/urls.txt
     uv run python bench/run.py --report-only
     uv run python bench/run.py --modes headless-shell --urls-file urls.txt --job-dir bench/results/job_xxx
+    uv run python bench/run.py --url https://example.com --local
+    uv run python bench/run.py --urls-file bench/urls.txt --cpus 2 --memory 4G
+    uv run python bench/run.py --urls-file bench/urls.txt --workers 4
 """
 
 import argparse
+import os
 import subprocess
 import sys
 import tempfile
@@ -85,9 +89,45 @@ def detect_ua() -> str:
     return ua
 
 
+def detect_ua_local() -> str:
+    """Detect Chrome UA locally via Playwright."""
+    print("==> Detecting User-Agent from local Chrome")
+    cmd = [sys.executable, "-c",
+           "from playwright.sync_api import sync_playwright; "
+           "pw = sync_playwright().start(); "
+           "b = pw.chromium.launch(headless=False, channel='chrome', args=['--no-sandbox']); "
+           "p = b.new_page(); print(p.evaluate('navigator.userAgent')); b.close(); pw.stop()"]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        print(f"Warning: local UA detection failed: {result.stderr.strip()[:200]}")
+        return ""
+    ua = result.stdout.strip().splitlines()[-1]
+    print(f"  User-Agent: {ua}")
+    return ua
+
+
+def run_local(mode: str, run_index: int, bench_args: list[str], output_base: Path) -> bool:
+    """Run benchmark directly on host (no Docker)."""
+    run_output = str(output_base / f"run_{run_index}")
+    print(f"==> Running {mode} locally (run {run_index})")
+    cmd = [
+        sys.executable, "-m", "bench",
+        "--modes", mode,
+        "--run-index", str(run_index),
+        "--output-dir", run_output,
+        *bench_args,
+    ]
+    result = subprocess.run(cmd, check=False)
+    if result.returncode != 0:
+        print(f"Error: {mode} run {run_index} failed (exit {result.returncode})")
+        return False
+    print(f"==> {mode} run {run_index} complete")
+    return True
+
+
 def run_container(
     mode: str, run_index: int, bench_args: list[str], volumes: list[str],
-    container_output_base: str,
+    container_output_base: str, cpus: str = "4", memory: str = "8G",
 ) -> bool:
     service = SERVICE_MAP.get(mode)
     if service is None:
@@ -97,6 +137,8 @@ def run_container(
     print(f"==> Running {mode} container (run {run_index})")
     cmd = [
         "docker", "compose", "-f", str(COMPOSE_FILE), "run", "--rm",
+        "--cpus", cpus,
+        "--memory", memory,
         *volumes,
         service,
         "--modes", mode,
@@ -155,6 +197,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--report-only", action="store_true", help="Only merge existing results and generate report")
     parser.add_argument("--job-dir", type=Path, default=None,
                         help="Job directory (for --report-only or to append results to an existing job)")
+    parser.add_argument("--local", action="store_true",
+                        help="Run benchmarks directly on host (no Docker). "
+                             "Requires Chrome installed and DISPLAY set for headful mode.")
+    parser.add_argument("--cpus", type=str, default="4",
+                        help="Docker CPU limit per container (default: 4)")
+    parser.add_argument("--memory", type=str, default="8G",
+                        help="Docker memory limit per container (default: 8G)")
+    parser.add_argument("--workers", type=int, default=1,
+                        help="Concurrent browser instances per run (default: 1 = sequential)")
     return parser
 
 
@@ -262,63 +313,130 @@ def main() -> None:
         volumes += ["-v", f"{tmp_file.name}:/app/bench/urls.txt:ro"]
         bench_args += ["--urls-file", "/app/bench/urls.txt"]
 
+    # Add workers flag to bench_args if specified
+    if args.workers > 1:
+        bench_args += ["--workers", str(args.workers)]
+
     try:
-        if not args.no_build:
-            # Only build services needed for the requested modes
-            services_needed = list({SERVICE_MAP[m] for m in all_modes})
-            # UA detection needs headful — build it too if not already included
-            needs_ua_detection = not args.user_agent and "headful" not in services_needed
-            if needs_ua_detection:
-                services_needed.append("headful")
-            build_images(services_needed)
+        if args.local:
+            # Local mode — no Docker
+            if any("headful" in m for m in all_modes) and not os.environ.get("DISPLAY"):
+                print("Warning: DISPLAY not set. Headful mode requires a display (Xvfb or real).")
 
-        # User-Agent: use provided, or detect from headful Chrome
-        if args.user_agent:
-            ua = args.user_agent
-            print(f"==> User-Agent (provided): {ua}")
+            # Detect UA locally
+            ua = args.user_agent or detect_ua_local()
+            if ua:
+                bench_args += ["--user-agent", ua]
+
+            # For local mode, pass URLs file directly (no Docker volume mount needed)
+            if args.urls_file:
+                urls_path = args.urls_file.resolve()
+                # Replace the container path with the real local path
+                try:
+                    idx = bench_args.index("/app/bench/urls.txt")
+                    bench_args[idx] = str(urls_path)
+                except ValueError:
+                    pass
+
+            total_runs = len(all_modes) * args.runs
+            print(f"==> {total_runs} local runs to launch ({len(all_modes)} modes x {args.runs} runs)")
+
+            for run_idx in range(args.runs):
+                print(f"\n==> Run {run_idx + 1}/{args.runs}")
+
+                if args.parallel:
+                    # Run fresh modes in parallel
+                    if fresh_modes:
+                        with ThreadPoolExecutor(max_workers=len(fresh_modes)) as pool:
+                            futures = {
+                                pool.submit(run_local, mode, run_idx, bench_args, job_dir): mode
+                                for mode in fresh_modes
+                            }
+                            failed = []
+                            for future in as_completed(futures):
+                                mode = futures[future]
+                                if not future.result():
+                                    failed.append(mode)
+                            if failed:
+                                print(f"Warning: {', '.join(failed)} run {run_idx} failed.")
+
+                    # Run reuse modes in parallel
+                    if reuse_modes:
+                        with ThreadPoolExecutor(max_workers=len(reuse_modes)) as pool:
+                            futures = {
+                                pool.submit(run_local, mode, run_idx, bench_args, job_dir): mode
+                                for mode in reuse_modes
+                            }
+                            for future in as_completed(futures):
+                                mode = futures[future]
+                                if not future.result():
+                                    print(f"Warning: {mode} run {run_idx} failed.")
+                else:
+                    for mode in all_modes:
+                        run_local(mode, run_idx, bench_args, job_dir)
+
+            generate_reports(job_dir)
         else:
-            ua = detect_ua()
-        if ua:
-            bench_args += ["--user-agent", ua]
+            # Docker mode
+            if not args.no_build:
+                # Only build services needed for the requested modes
+                services_needed = list({SERVICE_MAP[m] for m in all_modes})
+                # UA detection needs headful — build it too if not already included
+                needs_ua_detection = not args.user_agent and "headful" not in services_needed
+                if needs_ua_detection:
+                    services_needed.append("headful")
+                build_images(services_needed)
 
-        total_containers = len(all_modes) * args.runs
-        print(f"==> {total_containers} containers to launch ({len(all_modes)} modes x {args.runs} runs)")
-
-        for run_idx in range(args.runs):
-            print(f"\n==> Run {run_idx + 1}/{args.runs}")
-
-            if args.parallel:
-                # Run fresh modes in parallel
-                if fresh_modes:
-                    with ThreadPoolExecutor(max_workers=len(fresh_modes)) as pool:
-                        futures = {
-                            pool.submit(run_container, mode, run_idx, bench_args, volumes, container_output): mode
-                            for mode in fresh_modes
-                        }
-                        failed = []
-                        for future in as_completed(futures):
-                            mode = futures[future]
-                            if not future.result():
-                                failed.append(mode)
-                        if failed:
-                            print(f"Warning: {', '.join(failed)} run {run_idx} failed.")
-
-                # Run reuse modes in parallel
-                if reuse_modes:
-                    with ThreadPoolExecutor(max_workers=len(reuse_modes)) as pool:
-                        futures = {
-                            pool.submit(run_container, mode, run_idx, bench_args, volumes, container_output): mode
-                            for mode in reuse_modes
-                        }
-                        for future in as_completed(futures):
-                            mode = futures[future]
-                            if not future.result():
-                                print(f"Warning: {mode} run {run_idx} failed.")
+            # User-Agent: use provided, or detect from headful Chrome
+            if args.user_agent:
+                ua = args.user_agent
+                print(f"==> User-Agent (provided): {ua}")
             else:
-                for mode in all_modes:
-                    run_container(mode, run_idx, bench_args, volumes, container_output)
+                ua = detect_ua()
+            if ua:
+                bench_args += ["--user-agent", ua]
 
-        generate_reports(job_dir)
+            total_containers = len(all_modes) * args.runs
+            print(f"==> {total_containers} containers to launch ({len(all_modes)} modes x {args.runs} runs)")
+
+            for run_idx in range(args.runs):
+                print(f"\n==> Run {run_idx + 1}/{args.runs}")
+
+                if args.parallel:
+                    # Run fresh modes in parallel
+                    if fresh_modes:
+                        with ThreadPoolExecutor(max_workers=len(fresh_modes)) as pool:
+                            futures = {
+                                pool.submit(run_container, mode, run_idx, bench_args, volumes, container_output,
+                                            args.cpus, args.memory): mode
+                                for mode in fresh_modes
+                            }
+                            failed = []
+                            for future in as_completed(futures):
+                                mode = futures[future]
+                                if not future.result():
+                                    failed.append(mode)
+                            if failed:
+                                print(f"Warning: {', '.join(failed)} run {run_idx} failed.")
+
+                    # Run reuse modes in parallel
+                    if reuse_modes:
+                        with ThreadPoolExecutor(max_workers=len(reuse_modes)) as pool:
+                            futures = {
+                                pool.submit(run_container, mode, run_idx, bench_args, volumes, container_output,
+                                            args.cpus, args.memory): mode
+                                for mode in reuse_modes
+                            }
+                            for future in as_completed(futures):
+                                mode = futures[future]
+                                if not future.result():
+                                    print(f"Warning: {mode} run {run_idx} failed.")
+                else:
+                    for mode in all_modes:
+                        run_container(mode, run_idx, bench_args, volumes, container_output,
+                                      args.cpus, args.memory)
+
+            generate_reports(job_dir)
     finally:
         if tmp_file is not None:
             Path(tmp_file.name).unlink(missing_ok=True)
